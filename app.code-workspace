@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "webapp"
+		}
+	],
+	"settings": {
+		// "php.validate.executablePath": "C:\\wamp64\\bin\\php\\php5.6.35\\php.exe",
+		"php.executablePath": "C:\\wamp64\\bin\\php\\php7.2.4\\php.exe",
+		"php.validate.enable": true,
+		"phpserver.browser": "chrome",
+		"phpserver.port": 9000,
+		"phpserver.ip": "localhost",        
+		"phpserver.phpPath": "C:\\wamp64\\bin\\php\\php7.2.4\\php.exe",
+	}
+}

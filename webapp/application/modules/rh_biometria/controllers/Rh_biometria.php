@@ -158,11 +158,12 @@ class Rh_biometria extends MY_Controller{
         $tipo = $post["tipo"];
         $this->usuario_model->where("ID",$this->sessao['usuario_id']);
         $empresa = $this->usuario_model->get()->CDEMPRESA;
-        $retorno = array("status"=>true,"msg"=>"");   
-        // Adiciona no IdSecure     
+        $retorno = array("status"=>true,"msg"=>""); 
+        // Adiciona no IdSecure 
         $equipamento = $this->biometria_equipamento_model->get_all(array('TIPO'=>'IDSECURE','SINCRONIZAR' => 1));
         if($equipamento){
-            $constructIdSecure = ["ip" => $equipamento[0]->IP, "port" => $equipamento[0]->PORTA, "user" => $equipamento[0]->USUARIO, "password" => $equipamento[0]->SENHA,"protocol"=>$equipamento[0]->PROTOCOLO];
+          foreach($equipamento as $index => $valor){
+            $constructIdSecure = ["ip" => $equipamento[$index]->IP, "port" => $equipamento[$index]->PORTA, "user" => $equipamento[$index]->USUARIO, "password" => $equipamento[$index]->SENHA,"protocol"=>$equipamento[$index]->PROTOCOLO];
             $this->load->library('IdSecure',$constructIdSecure);
             if($this->idsecure->authenticate()){
                 $users = [];
@@ -191,10 +192,11 @@ class Rh_biometria extends MY_Controller{
                 $retorno['status'] = false;
                 $retorno['msg'] = "Não foi possivel logar no IdSecure";
             }
+          }
         }
         // Adiciona nos reps
         if($retorno['status'] && $tipo == 1){
-            $equipamento = $this->biometria_equipamento_model->get_all(array("CDEMPRESA" => $empresa, "TIPO"=>"IDCLASS","SINCRONIZAR" => 1));
+            $equipamento = $this->biometria_equipamento_model->get_all(array("CDEMPRESA" => $empresa, "TIPO"=>"IDCLASS", "SINCRONIZAR" => 1)); //"SINCRONIZAR" => 1
             if($equipamento){
                 $retornoEquip = new StdClass();
                 
@@ -217,16 +219,25 @@ class Rh_biometria extends MY_Controller{
                     $this->load->library('IdClass',$constructIdClass);
                     if($this->idclass->authenticate()){
                         $retornoEquip->status = true;
-                        array_push($retornoEquip->equipamento, $constructIdClass);                       
+                        array_push($retornoEquip->equipamento, $constructIdClass);
+                        
+                        $retorno['status'] = true;
+                        $retorno['msg'] = "Sucesso";
                     }else{
                         $retornoEquip->status = false;
                         $retorno['status'] = false;
                         $retorno['msg'] = "Não foi possivel logar no IdClass {$value->IP}";
                     }
                 }
+                
+                // $arrEquipamentos = $this->biometria_equipamento_model->get_all(array("CDEMPRESA" => $empresa, "INTEGRADO" => 1));
+                $arrEquipamentos = $this->biometria_equipamento_model->get_all(["INTEGRADO <>" => 0]);
+                foreach($arrEquipamentos as $equipamento){
+                  $this->biometria_fila_model->insert(["EQUIPAMENTOID" => $equipamento->ID, "USUARIOCPF" => "000".$post["cpf"], "OPERACAO" => "CADASTRO"]);                
+                }
             }
         }
-        /*if($retorno['status'] || $tipo == 2){  
+        if($retorno['status'] || $tipo == 2){  
             $arrEquipamentos = $this->biometria_equipamento_model->get_all(["INTEGRADO <>" => 0]);            
             foreach($arrEquipamentos as $equipamento){            
                 $this->biometria_fila_model->insert(["EQUIPAMENTOID" => $equipamento->ID, "USUARIOCPF" => "000".$post["cpf"], "OPERACAO" => "CADASTRO"]);                
@@ -235,7 +246,7 @@ class Rh_biometria extends MY_Controller{
             //echo json_encode(array("status"=>true));
         }else{
             echo json_encode($retorno);
-        }  */  
+        }
         
         //echo json_encode($retorno);
         echo json_encode($retornoEquip);
