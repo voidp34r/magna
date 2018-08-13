@@ -58,7 +58,7 @@ if(ENVIRONMENT == 'development') $config['base_url'] = $protocolo . 'localhost/w
   | variable so that it is blank.
   |
  */
- $config['index_page'] = '';
+$config['index_page'] = '';
 
 /*
   |--------------------------------------------------------------------------

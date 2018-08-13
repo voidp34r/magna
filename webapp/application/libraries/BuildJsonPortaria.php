@@ -6,7 +6,7 @@ if (!defined('BASEPATH'))
 Class BuildJsonPortaria
 {
 
-    private $instanciaIdClass;   
+    private $instanciaIdClass;
 
     public function __construct()
     {
@@ -114,37 +114,6 @@ Class BuildJsonPortaria
         return $rs->result();
     }
 
-    public function buildJsonChecklistMec($placa){
-        $motorista['MANIFESTOS'][0] = new StdClass();
-        $motorista['MANIFESTOS'][0]->NRPLACA = $placa;
-        
-        return $this->addRenavamMec($motorista['MANIFESTOS'][0]);;
-    }
-
-    private function addRenavamMec($doc){   
-        $this->CI->load->library('SoftranMobileLibrary');
-        if(isset($doc->NRPLACA))
-        {            
-            $retorno = $this->CI->db->query("SELECT INVEICULO FROM SOFTRAN_MAGNA.GTCVEIDP WHERE NRPLACA = '$doc->NRPLACA' ")->result();
-            if($retorno){
-                $retorno = $retorno[0];
-                if($retorno->INVEICULO == 1) {
-                    unset($doc->NRPLACA);
-                }else{
-                    $retorno = $this->CI->db->query("SELECT NRRENAVAN FROM SOFTRAN_MAGNA.SISVEICU WHERE NRPLACA = '$doc->NRPLACA' ")->result()[0];
-                    $doc->NRPLACA_RENAVAN = $retorno->NRRENAVAN;
-                    $doc->NRPLACA_HODOMETRO = $this->CI->softranmobilelibrary->retornaHodometroVeiculo($doc->NRPLACA)->ok ? 
-                                                $this->CI->softranmobilelibrary->retornaHodometroVeiculo($doc->NRPLACA)->obj : 
-                                                null;            
-                }
-            }else{
-                unset($doc->NRPLACA);
-            }
-        }
-
-        return $doc;
-    }
-
     private function retornaVeiculosDocs($arrInfo)
     {       
         $veiculos = [];
@@ -167,11 +136,11 @@ Class BuildJsonPortaria
 
                 return $inArr;
             }    
-        }     
+        }
+
 
         foreach($arrInfo as $chave => $objs)
         {   
-            
             if($chave != "QTDOCUMENTOS" )
             {
                 foreach($objs as $obj)
@@ -316,32 +285,6 @@ Class BuildJsonPortaria
                                                                  )
                                             AND TRUNC(A.DTEMISSAO) BETWEEN '{$dtIni}' AND '{$dtFim}' 
                                             ORDER BY A.DTEMISSAO DESC")->result();
-         
-         
-    /*$manifestos =  $this->CI->db->query("SELECT  
-                                            A.NRMANIFESTO,
-                                            TRUNC(A.DTEMISSAO) AS DTEMISSAO,
-                                            A.NRPLACA,
-                                            A.NRPLACACARRETA,
-                                            A.NRPLACAREBOQUE2,
-                                            A.NRPLACAREBOQUE3, 
-                                            SOFTRAN_MAGNA.PESO_MANIFESTO(A.NRMANIFESTO) AS PESO
-                                            FROM SOFTRAN_MAGNA.GTCMAN A
-                                            LEFT JOIN SOFTRAN_MAGNA.SISROTA B ON B.CDROTA = A.CDROTA
-                                            WHERE A.CDMOTORISTA = '00000371751900'
-                                            AND A.DTCANCELAMENTO IS NULL
-                                            AND A.INIMPRESSO = 1
-                                            AND NOT EXISTS (SELECT * FROM 
-                                                                PORTARIA_CHECKLIST_DOCUMENTO ZZ
-                                                                LEFT JOIN PORTARIA_CHECKLIST XX 
-                                                                                    ON XX.ID = ZZ.ID_CHECKLIST  
-                                                                LEFT JOIN USUARIO XZ 
-                                                                                    ON XZ.ID = XX.USUARIO_ID                       
-                                                                WHERE ZZ.NRMANIFESTO = A.NRMANIFESTO
-                                                                AND XZ.CDEMPRESA = 6
-                                                                )
-                                            AND TRUNC(A.DTEMISSAO) BETWEEN '19/01/2018' AND '20/03/2018' 
-                                            ORDER BY A.DTEMISSAO DESC")->result();*/
       
        $romaneios = $this->CI->db->query("SELECT 
                                             A.CDEMPRESA,

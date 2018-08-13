@@ -125,7 +125,8 @@
      *  A diferençãa que aqui como já estamos na fila não adiciona a fila novamente os processos que não derem certo, somente ao log de erro
      *  como os processo realizados no outro método o processo aqui é todo sincrono.
      */
-    function processaFila(){   
+    function processaFila()
+    {   
         $('#modalLoad').show();
         $.ajax(
                 {url : "ti_biometria/processar_fila",
@@ -474,12 +475,6 @@
     function cadastraTemplateIdAccess(protocolo,ip,sessao,templates,userId,sucesso,erro){
         var url =  protocolo+"://"+ip+"/create_objects.fcgi?session="+sessao;
         templates.forEach(function(item){
-            let template = item;
-            // Necessario pois no id secure tem um | no final
-            if(item.substring(item.length -1, item.length) === "|"){
-                template = item.substring(0, item.length - 1);
-            }
-             
             $.ajax(
                 {		
                     url: url,
@@ -501,7 +496,7 @@
                         values:[  
                             {  
                                 finger_type : 0,
-                                template : template,
+                                template : item,
                                 user_id : userId
                             }
                         ]

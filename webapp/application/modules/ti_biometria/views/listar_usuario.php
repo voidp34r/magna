@@ -12,10 +12,10 @@
      Importar usuário específico
 </a>
 
-<a class="btn btn-primary" id="btnCsv">
+<!--a class="btn btn-primary" id="btnCsv">
     <i class="fa fa-cloud-download" aria-hidden="true"></i>
      Importar CSV IdBox
-</a>
+</a-->
 
 <div class="panel panel-default">
     <div class="panel-heading">

@@ -3,10 +3,9 @@
         $data = explode(".",$micro);
         $date = date("d/m/Y H:i:s", $data[0]);
         $dt = new DateTime();
-        /*$dt = $dt->createFromFormat('d/m/Y h:i:s', $date);
-        $dtAlter = $dt->modify('-2 hour');*/
-        return $date
-        //return $dtAlter->format('d/m/Y H:i:s');
+       # $dt = $dt->createFromFormat('d/m/Y h:i:s', $date);
+       # $dtAlter = $dt->modify('-2 hour');
+        return $date;
     }
 
 ?>

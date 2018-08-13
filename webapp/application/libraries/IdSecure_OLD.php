@@ -55,50 +55,7 @@ Class IdSecure
        }
 
        return $isOk;
-   }
-   
-   public function import_userTogroup($arrayUser, $ref){
-        switch ($ref) {
-            case 1:
-                $grupoName = 'Refeição - 12H';
-                $grupoCode = 1005;
-                break;
-            case 2:
-                $grupoName = 'Refeição - 19H';
-                $grupoCode = 1006;
-                break;
-            case 3:
-                $grupoName = 'Refeição - 22H';
-                $grupoCode = 1007;
-                break;
-            case 4:
-                $grupoName = 'Refeição - 00H';
-                $grupoCode = 1008;
-                break;
-        }    
-
-        $ref = new StdClass();
-        $ref->contingency = false;
-        $ref->disableADE = false;
-        $ref->id = $grupoCode;
-        $ref->id2 = null;
-        $ref->idType = 1;
-        $ref->maxTimeInside = null;
-        $ref->nPeople = 0;
-        $ref->nUsers = 0;
-        $ref->nVisitors = 0;
-        $ref->name = $grupoName;
-        $ref->users = $arrayUser;
-        $ref->parkingSpots = null;
-        $ref->parkingSpotsList = null;
-        print_r($ref);
-        if($result = $this->callRequestPut('api/group/',$ref, true)){
-
-        return $result = $this->callRequestPut('api/group/',$ref, true);
-        }else{
-            return $result = $this->callRequestPut('api/group/',$ref, true);
-        }
-    } 
+   } 
 
     public function removeGeral($ref){
         switch ($ref) {
@@ -134,6 +91,34 @@ Class IdSecure
         $ref->parkingSpots = null;
         $ref->parkingSpotsList = null;
         if($result = $this->callRequestPut('api/group/',$ref, true)){
+           return $result = $this->callRequestPut('api/group/',$ref, true);
+        }else{
+            return $result = $this->callRequestPut('api/group/',$ref, true);
+        }
+    }
+
+    
+    public function TESTE($userID){
+        $grupoName = 'TESTE';
+        $grupoCode = 1042;
+        $ref = new StdClass();
+        $ref->contingency = false;
+        $ref->disableADE = false;
+        $ref->id = $grupoCode;
+        $ref->id2 = null;
+        $ref->idType = 1;
+        $ref->maxTimeInside = null;
+        $ref->nPeople = 0;
+        $ref->nUsers = 0;
+        $ref->nVisitors = 0;
+        $ref->name = $grupoName;
+        $ref->users = $userID;
+        $ref->parkingSpots = null;
+        $ref->parkingSpotsList = null;
+        print_r($ref);
+        
+        if($result = $this->callRequestPut('api/group/',$ref, true)){
+
            return $result = $this->callRequestPut('api/group/',$ref, true);
         }else{
             return $result = $this->callRequestPut('api/group/',$ref, true);

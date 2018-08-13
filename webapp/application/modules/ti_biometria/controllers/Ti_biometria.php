@@ -480,32 +480,11 @@ class Ti_biometria extends MY_Controller{
                 /*}*/
                 
             }            
-            //$this->createidSecure($userObj);
-            echo json_encode($userObj);
+            $this->createidSecure($userObj);
+            //echo json_encode($users);
         }else{
             echo json_encode('Erro ao autenticar');
         }
-    }
-
-    function createRep(){
-        $equipamento = $this->biometria_equipamento_model->get_all(array('TIPO'=>'IDSECURE'));
-        $retorno = [];
-        if($equipamento){            
-            $constructIdSecure = ["ip" => $equipamento[0]->IP, "port" => $equipamento[0]->PORTA, "user" => $equipamento[0]->USUARIO, "password" => $equipamento[0]->SENHA,"protocol"=>$equipamento[0]->PROTOCOLO];
-             //Carrega a instancia da classe do equipamento
-            $this->load->library('IdSecure',$constructIdSecure);
-            if($this->idsecure->authenticate()){                
-                $retorno = $this->idsecure->getUsers();
-                //$retorno["retorno"]="success";           
-            }else{
-                $retorno["msg"]="Não foi possivel logar no equipamento";
-                $retorno["retorno"]="error";   
-            }           
-        }else {
-            $retorno["msg"]="Não encontrado equipamento cadastrado";
-            $retorno["retorno"]="error";   
-        }
-        echo json_encode($retorno);
     }
 
     function createidSecure($users){
@@ -572,8 +551,8 @@ class Ti_biometria extends MY_Controller{
             $data->shelfEndLife = null;
             $data->foto = null;
             $data->fotoDoc = null; 
-            array_push($dataUsers, $data);
-            //array_push($dataUsers, array($data->id => $this->idsecure->addUserImport($data)));
+            //array_push($dataUsers, $data);
+            array_push($dataUsers, array($data->id => $this->idsecure->addUserImport($data)));
             //sleep(3);
         }
         echo json_encode($dataUsers);
@@ -585,7 +564,7 @@ class Ti_biometria extends MY_Controller{
     function csvIdBox(){    
         //Adiciona os parametros do IdBox
         //$this->createidSecure(null);
-        //$this->createRep();
+        $this->importToIdbox();
        /* $constructParams = ["ip" => '192.168.99.250', "user" => 'admin', "password" => 'mgn1409',"protocol"=>'http'];
         
         //Carrega a instancia da classe do equipamento

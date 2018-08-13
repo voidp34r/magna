@@ -223,7 +223,7 @@ Class IdClass
                     switch ($tipo) {
                         case 1:
                             //12h
-                            if($hora >= '00:00' && $hora <= '08:30'){
+                            if($hora >= '04:45' && $hora <= '08:33'){
                                 $batidaObj = new \StdClass();
                                 $batidaObj->DTBATIDA = substr($dataLine,10,2).'/'.substr($dataLine,12,2).'/'.substr($dataLine,14,4);
                                 $batidaObj->HRBATIDA = $hora;
@@ -233,7 +233,7 @@ Class IdClass
                             break;   
                         case 2:
                             //19h
-                            if($hora >= '08:31' && $hora <= '14:00'){
+                            if($hora >= '11:45' && $hora <= '13:45'){
                                 $batidaObj = new \StdClass();
                                 $batidaObj->DTBATIDA = substr($dataLine,10,2).'/'.substr($dataLine,12,2).'/'.substr($dataLine,14,4);
                                 $batidaObj->HRBATIDA = $hora;
@@ -243,7 +243,7 @@ Class IdClass
                             break; 
                         case 3:
                             //22h
-                            if($hora >= '14:01' && $hora <= '18:20'){
+                            if($hora >= '17:30' && $hora <= '20:35'){
                                 $batidaObj = new \StdClass();
                                 $batidaObj->DTBATIDA = substr($dataLine,10,2).'/'.substr($dataLine,12,2).'/'.substr($dataLine,14,4);
                                 $batidaObj->HRBATIDA = $hora;
@@ -253,7 +253,7 @@ Class IdClass
                             break;
                         case 4:
                             //00h
-                            if($hora >= '18:21' && $hora <= '23:20'){
+                            if($hora >= '21:30' && $hora <= '23:20'){
                                 $batidaObj = new \StdClass();
                                 $batidaObj->DTBATIDA = substr($dataLine,10,2).'/'.substr($dataLine,12,2).'/'.substr($dataLine,14,4);
                                 $batidaObj->HRBATIDA = $hora;
@@ -421,6 +421,8 @@ Class IdClass
         $where = new StdClass();
         $where->object = "users";
         $where->field = "name";
+        $userName = str_replace('20', '', $userName);
+        $userName = str_replace('%', ' ', $userName);
         $where->value = "%$userName%";
         $where->connector = ") AND (";
         $tableUsers->where = [$where];
@@ -524,19 +526,25 @@ Class IdClass
                     $fingerInsert['USUARIOCPF'] = $motorista->CPF;
                     $this->CI->biometria_usuario_digital_model->insert($fingerInsert);
                 }
+
                 array_push($ArrnewUsers,$motorista->CPF);
+    
             }
         }
 
         if(count($ArrnewUsers) > 0 ){
-            $arrEquipamentos = $this->CI->biometria_equipamento_model->get_all(["INTEGRADO <>" => 0]);    
-            foreach($arrEquipamentos as $equipamento){                
+            $arrEquipamentos = $this->CI->biometria_equipamento_model->get_all(["INTEGRADO <>" => 0]);
+            
+            foreach($arrEquipamentos as $equipamento){
+                
                 foreach($ArrnewUsers as $cpf){
                     $this->CI->biometria_fila_model->insert(["EQUIPAMENTOID" => $equipamento->ID, "USUARIOCPF" => $cpf, "OPERACAO" => "CADASTRO"]);
                 }
             }
         }
+
     }
+
 
     private function addTemplateToUsers($motoristas){
 
@@ -564,8 +572,11 @@ Class IdClass
                 foreach($arrTemplates->templates as $template){
                     array_push($motorista->templates,$template);
                 }
+
             }
+
         }
+
         return $motoristas;
     }
 

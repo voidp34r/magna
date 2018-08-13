@@ -36,6 +36,10 @@
         <div class="container">
         	<br>
 			<br>
+			<?php 
+										
+			?>
+
             <br>
             <?php echo form_open('', 'class="form-signin"'); ?>
 				<div class="card">

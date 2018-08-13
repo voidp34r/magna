@@ -9,7 +9,6 @@ class MobileLib {
     var $CI;
      
     const DIRETORIOARQUIVOS = '/var/www/webapp/uploads/checklist'; 
-    //const DIRETORIOARQUIVOS = 'uploads/checklist'; 
 
     public function __construct ()
     {
@@ -20,9 +19,6 @@ class MobileLib {
         $this->CI->load->model('frotas_portaria/Portaria_checklist_foto_model');
         $this->CI->load->model('frotas_portaria/Portaria_checklist_documento_model');
     }   
-    public function tirarAcentos($string){        
-        return preg_replace(array("/(á|à|ã|â|ä)/","/(Á|À|Ã|Â|Ä)/","/(é|è|ê|ë)/","/(É|È|Ê|Ë)/","/(í|ì|î|ï)/","/(Í|Ì|Î|Ï)/","/(ó|ò|õ|ô|ö)/","/(Ó|Ò|Õ|Ô|Ö)/","/(ú|ù|û|ü)/","/(Ú|Ù|Û|Ü)/","/(ñ)/","/(Ñ)/"),explode(" ","a A e E i I o O u U n N"),$string);
-    }
 
     public function insertNewChecklist($checklistParam,$documentos)
     {     
@@ -80,6 +76,7 @@ class MobileLib {
         $statusOk = $checkList->ID ? true : false;
         
         $diretorio = self::DIRETORIOARQUIVOS.date('d-m-Y');
+        
         //Caso Tenha Foto Salva Elas
         if(isset($objeto->fotos))
         {
@@ -102,7 +99,6 @@ class MobileLib {
                 //Seta o nome do Arquivo com as Informações da Foto
                 $arquivoNome = "{$checkList->ID}-{$checkList->CDVEICULO}-{$imagem->DSDESCRICAO}.jpg";
                 $caminhoImagem = "{$diretorio}/{$arquivoNome}";
-                $caminhoImagem = tirarAcentos($caminhoImagem);
                 
                 //Seta o Caminho para inserir no Bnaco
                 $imagemPost->CAMINHO = $caminhoImagem;
@@ -146,10 +142,7 @@ class MobileLib {
             }
             
         }    
-        //echo($statusRomaneio);
-        //echo($statusOk);
-        //return $statusRomaneio ? $statusOk : false;
-        return $statusOk;
+        return $statusRomaneio ? $statusOk : false;
 
     }
 

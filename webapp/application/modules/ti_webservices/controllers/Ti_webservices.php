@@ -30,7 +30,7 @@ class Ti_webservices extends MY_Controller{
     	
         $this->dados['lista'] = $this->ws_log_model
         	->order_by('ID', 'DESC')
-        	->paginate(10, $total, $page);
+        	->paginate(10,$total, $page);
         
         $this->dados['total'] = $total;
         $this->dados['paginacao'] = $this->ws_log_model->all_pages;

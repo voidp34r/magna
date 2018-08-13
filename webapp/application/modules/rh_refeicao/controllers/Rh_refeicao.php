@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @author andretimm
+ * @author andretimm,msouz4
  */
 class Rh_refeicao extends MY_Controller{
 
@@ -25,25 +25,177 @@ class Rh_refeicao extends MY_Controller{
 
         $this->dados['modulo_nome'] = 'RH > Refeição';
         $this->dados['modulo_menu'] = array('Importados' => 'import_refeicao',
-                                            'Relatórios' => 'import_relatorio',
                                             'Erros' => 'import_erros',
-                                            'Limpar Reservas IDSECURE'=> 'import_remove');
+                                            'Limpar Reservas IDSECURE' => 'import_remove',
+                                            'Relatórios' => 'import_relatorio',
+                                            'Importação Manual' => 'import_manual');
         
         parent::__construct();
     }
+
     function import_remove($page = 0){
         $this->render('import_remove');
-        $this->removeAcess();
+        //$this->removeAcessoGeral();
+    }
+
+    function import_manual($page = 0){
+        $get  = $this->input->get();
+        $ref = $get[int][HORARIO_REFEICAO];
+        $PIS = $get[filtro][like][NOME];
+        if (strlen($PIS) >= 10){
+            if ($ref > 0){
+                $equipamento = $this->biometria_equipamento_model->get_all(array('TIPO'=>'IDSECURE'));
+                $constructIdSecure = ["ip" => $equipamento[0]->IP, "port" => $equipamento[0]->PORTA, "user" => $equipamento[0]->USUARIO, "password" => $equipamento[0]->SENHA,"protocol"=>$equipamento[0]->PROTOCOLO];
+                $this->load->library('IdSecure',$constructIdSecure);
+                if($this->idsecure->authenticate()){   
+                    $PIS = $get[filtro][like][NOME];
+
+                    switch ($ref) {
+                        case '1':
+                            $turn = Rh_refeicao::ALMOCO12;
+                            $grupoCode = Rh_refeicao::GRUPO12;
+                            break;
+                        case '2':
+                            $turn = Rh_refeicao::ALMOCO19;
+                            $grupoCode = Rh_refeicao::GRUPO19;
+                            break;
+                        case '3':
+                            $turn = Rh_refeicao::ALMOCO22;
+                            $grupoCode = Rh_refeicao::GRUPO22;
+                            break;
+                        case '4':
+                            $turn = Rh_refeicao::ALMOCO00;
+                            $grupoCode = Rh_refeicao::GRUPO00;
+                            break;
+                    } 
+                    $usuario = new StdClass();                        
+                    $user = $this->idsecure->searchUser($PIS); 
+                    $usuario->DATA = date('d/m/Y');
+                    $usuario->NOME = $user->name;
+                    if($user){                            
+                        $usuario->USER_ID_IDSECURE = $user->id;
+                        $group = $this->idsecure->getGroups($grupoCode);
+                        if($group){
+                            array_push($user->groups, $grupoCode);
+                            array_push($user->groupsList, $group);
+                            $usuario->STATUS = "Sucesso";
+                            $totSucc++;
+                            if($this->idsecure->setUserGroup($user)){
+                                $usuario->STATUS = "Sucesso";
+                                $totSucc++;
+                                $usuario->HORARIO_REFEICAO = $turn;
+                                $this->rh_refeicao_model->insert($usuario);
+                            }else{
+                                $totError++;
+                                $usuario->STATUS = "Erro so salvar no IdSecure";
+                            }                            
+                        }                                                    
+                    }else{
+                            $totError++;
+                            $usuario->STATUS = "PIS não encontrado no IdSecure.";
+                        }
+                }else{
+                    $usuario->STATUS = "Erro ao autenticar no IDSECURE, verifique com a T.I se o serviço está funcional";
+                }
+            }
+        }
+        $this->dados['retorno'] = $usuario; 
+        $this->render('import_manual');
+    }
+
+     function import_relatorio($page = 0){
+        // Lança valor nas refeições que estão com status de NAO ACESSOU porém por algum erro o sistema nao lançou automaticamente.
+        $this->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.VLREFEICAO = '11.19' WHERE RH_REFEICAO.ACESSOU = 2 AND RH_REFEICAO.VLREFEICAO IS NULL"); 
+        $get  = $this->input->get();
+        $v1 = $get[filtro][like][NOME];
+        $limit = true;
+        if($page <> 0) $page = (($page - 1) * 9) + 1;
+        if (!$v1){
+
+             $dtiFixo = $get[filtro][date][DTREFEICAOI];
+             $dtfFixo = $get[filtro][date][DTREFEICAOF];
+
+             $total = $this->db->select("COUNT(RH_REFEICAO.ID) AS QTRESERVA,SUM(RH_REFEICAO.VLREFEICAO) AS VLREFEICAO,
+                                         (SELECT COUNT(A.ID) FROM RH_REFEICAO A WHERE A.STATUS is null or A.STATUS = 'Sucesso' AND A.DATA BETWEEN '$dtiFixo' AND '$dtfFixo' AND A.NOME = RH_REFEICAO.NOME AND ACESSOU = 1) AS QTACESSOU,
+                                         (SELECT COUNT(A.ID) FROM RH_REFEICAO A WHERE A.STATUS is null or A.STATUS = 'Sucesso' AND A.DATA BETWEEN '$dtiFixo' AND '$dtfFixo' AND A.NOME = RH_REFEICAO.NOME AND ACESSOU = 2) AS QTNAOACESSOU,
+                                        RH_REFEICAO.NOME")
+                            ->from("RH_REFEICAO ")  
+                            ->where("RH_REFEICAO.STATUS is null or RH_REFEICAO.STATUS = 'Sucesso'")  
+                            ->group_by("RH_REFEICAO.NOME")                               
+                            ->order_by("RH_REFEICAO.NOME", "ASC");
+        }
+        else{
+            $total = $this->db->select('RH_REFEICAO.*')
+                                ->from('RH_REFEICAO ')  
+                                ->where("RH_REFEICAO.STATUS is null or RH_REFEICAO.STATUS = 'Sucesso'")                                
+                                ->order_by("RH_REFEICAO.ID", "desc");
+        }
+
+        if($this->filtroDate2($get)) {
+            $limit = false;
+            $total->where($this->filtroDate2($get));
+        }
+
+        if($this->filtroInt($get)) {
+            $limit = false;
+            $total->where($this->filtroInt($get));
+        }
+
+        if($this->filtroLike($get)) {
+            $limit = false;
+            $total->where($this->filtroLike($get));
+        }
+
+        $total = $total->get()->num_rows();
+
+        if($limit){
+            $query = $this->db->select('RH_REFEICAO.*')
+                            ->from('RH_REFEICAO ')  
+                            ->where("RH_REFEICAO.STATUS is null or RH_REFEICAO.STATUS = 'Sucesso'")                                 
+                            ->order_by("RH_REFEICAO.ID", "desc")
+                            ->limit(10,$page);
+            $this->dados['paginacao'] = $this->configurePagination(10,$total,'rh_refeicao/import_refeicao');
+        }else{
+            if (!$v1){
+                 $dtiFixo = $get[filtro][date][DTREFEICAOI];
+                 $dtfFixo = $get[filtro][date][DTREFEICAOF];
+
+             $query = $this->db->select("COUNT(RH_REFEICAO.ID) AS QTRESERVA,SUM(RH_REFEICAO.VLREFEICAO) AS VLREFEICAO,
+                                         (SELECT COUNT(A.ID) FROM RH_REFEICAO A WHERE A.STATUS is null or A.STATUS = 'Sucesso' AND TO_DATE(A.DATA,'DD/MM/YYYY') BETWEEN TO_DATE('$dtiFixo','DD/MM/YYYY') AND TO_DATE('$dtfFixo','DD/MM/YYYY') AND A.NOME = RH_REFEICAO.NOME AND ACESSOU = 1) AS QTACESSOU,
+                                         (SELECT COUNT(A.ID) FROM RH_REFEICAO A WHERE A.STATUS is null or A.STATUS = 'Sucesso' AND TO_DATE(A.DATA,'DD/MM/YYYY') BETWEEN TO_DATE('$dtiFixo','DD/MM/YYYY') AND TO_DATE('$dtfFixo','DD/MM/YYYY') AND A.NOME = RH_REFEICAO.NOME AND ACESSOU = 2) AS QTNAOACESSOU,
+                                        RH_REFEICAO.NOME")
+                            ->from("RH_REFEICAO ")  
+                            ->where("RH_REFEICAO.STATUS is null or RH_REFEICAO.STATUS = 'Sucesso'")  
+                            ->group_by("RH_REFEICAO.NOME")                               
+                            ->order_by("RH_REFEICAO.NOME", "ASC");
+            }
+            else{
+                $query = $this->db->select('RH_REFEICAO.*')
+                               ->from('RH_REFEICAO ')  
+                               ->where("RH_REFEICAO.STATUS is null or RH_REFEICAO.STATUS = 'Sucesso'")                                 
+                               ->order_by("RH_REFEICAO.ID", "desc");
+            }
+            $this->dados['paginacao'] = "";
+        }        
+
+        if($this->filtroDate2($get)) $query->where($this->filtroDate2($get));
+                
+        if($this->filtroInt($get)) $query->where($this->filtroInt($get));
+
+        if($this->filtroLike($get)) $query->where($this->filtroLike($get));
+        
+        $resultado = $query->get();
+        $this->dados['lista'] = $resultado->result();  
+        $this->dados['total'] = $total;
+        
+        $this->dados['filtro'] = [];
+        $this->render('import_relatorio');
     }
 
     function index(){
         $this->redirect('rh_refeicao/import_refeicao');
     }
 
-    function import_relatorio($page = 0){
-        $this->render('import_relatorio');
-    }
-    
     function import_refeicao($page = 0){  
         
         $get  = $this->input->get();
@@ -153,6 +305,22 @@ class Rh_refeicao extends MY_Controller{
         return $retorno;
     }
 
+    function filtroDate2($get = null){
+
+        $retorno = "";
+        
+        if(isset($get['filtro']['date'])){
+            
+            if($get['filtro']['date']['DTREFEICAOI']){
+                //Data do SQL
+                $dti = $get['filtro']['date']['DTREFEICAOI'];
+                $dtf = $get['filtro']['date']['DTREFEICAOF'];
+                $retorno = "TO_DATE(RH_REFEICAO.DATA,'DD/MM/YYYY') BETWEEN TO_DATE('{$dti}','DD/MM/YYYY') and TO_DATE('{$dtf}','DD/MM/YYYY')";
+            }
+        }        
+        return $retorno;
+    }
+
     function filtroInt($get = null){ 
         
         $arr = [];
@@ -204,8 +372,25 @@ class Rh_refeicao extends MY_Controller{
         return $this->pagination->create_links();
     } 
     
+    function removeAcessoGeral($ref){
+        set_time_limit(2500);
+        date_default_timezone_set("Brazil/East");
+        $data = date('d/m/Y H:i:s');
+        $d = intval(substr($data, 0, 2));
+        $m = intval(substr($data, 3, 2));
+        $y = intval(substr($data, 6, 4));
+        $equipamento = $this->biometria_equipamento_model->get_all(array('TIPO'=>'IDSECURE'));
+        if($equipamento){ 
+            $constructIdSecure = ["ip" => $equipamento[0]->IP, "port" => $equipamento[0]->PORTA, "user" => $equipamento[0]->USUARIO, "password" => $equipamento[0]->SENHA,"protocol"=>$equipamento[0]->PROTOCOLO]; 
+            $this->load->library('IdSecure',$constructIdSecure);
+            if($this->idsecure->authenticate()){
+                $this->idsecure->removeGeral($ref);
+            }
+        }
+    }   
+
     function removeAcess(){
-        set_time_limit(9800);
+        set_time_limit(2500);
         date_default_timezone_set("Brazil/East");
         $data = date('d/m/Y H:i:s');
         $d = intval(substr($data, 0, 2));
@@ -219,13 +404,13 @@ class Rh_refeicao extends MY_Controller{
             $constructParams = ["ip" => '192.168.98.13', "user" => 'admin', "password" => 'admin',"protocol"=>'https'];
             $this->load->library('IdClass',$constructParams);    
             $this->load->library('IdSecure',$constructIdSecure);
-            if($this->idsecure->authenticate()){      
+            if($this->idsecure->authenticate()){
                 if($this->idclass->authenticate()){
                     $afd = $this->idclass->getAFDRefeicao($d,$m,$y,0);
                     foreach ($afd as $key => $value) {
                         $usuario = new StdClass();                        
                         $user = $this->idsecure->searchUser(substr($value->PIS, 1));
-                        if($user){                            
+                        if($user){                           
                             /* Remove os grupos de todos */
                             foreach ( $user->groups as $key => $value) {
                                 if($value == Rh_refeicao::GRUPO12 ||
@@ -317,10 +502,12 @@ class Rh_refeicao extends MY_Controller{
                         
                         if($resultado){                            
                             $operationOk = $this->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.ACESSOU = 1 WHERE RH_REFEICAO.ID = {$resultado[0]->ID}");
+                            $operationOk2 = $this->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.VLREFEICAO = '2.24' WHERE RH_REFEICAO.ID = {$resultado[0]->ID}");
                         }                        
                     }
                 } 
-                $this->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.ACESSOU = 2 WHERE RH_REFEICAO.ACESSOU is null AND RH_REFEICAO.DATA = '{$data}'");              
+                $this->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.ACESSOU = 2 WHERE RH_REFEICAO.ACESSOU is null AND RH_REFEICAO.DATA = '{$data}'");
+                $this->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.VLREFEICAO = '11.19' WHERE RH_REFEICAO.ACESSOU is null AND RH_REFEICAO.DATA = '{$data}'");              
             }
         }
     }
@@ -343,6 +530,10 @@ class Rh_refeicao extends MY_Controller{
                 $this->db->query("DELETE FROM RH_REFEICAO WHERE RH_REFEICAO.ID = {$value->ID} AND RH_REFEICAO.DATA = '{$data}' AND RH_REFEICAO.HORARIO_REFEICAO = '{$ref}'");              
             }
         }
+    }
+
+    function servico(){
+        echo "teste";
     }
     
     function importAfd($ref, $relat){        

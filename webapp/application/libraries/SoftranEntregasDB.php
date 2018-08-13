@@ -21,7 +21,7 @@ class SoftranEntregasDB {
      * @param string $cpfCnpjMotorista 
      */
     public function getCtesDoMotorista($cpfCnpjMotorista){
-        
+    	
 	$query = "  SELECT
                     C.CDEMPRESA as empresa ,
                     C.NRDOCTOFISCAL as nrDocto,

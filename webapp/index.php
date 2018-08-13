@@ -60,11 +60,11 @@ header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
 //define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
 
 //Ambiente PRODU��O (branch master)
-//define('ENVIRONMENT', 'production');
+define('ENVIRONMENT', 'production');
 
-define('ENVIRONMENT', 'development');
+//define('ENVIRONMENT', 'development');
 
-define('VERSION', 'v1.0.5');
+define('VERSION', 'v1.0.4');
 
 /*
  * ---------------------------------------------------------------

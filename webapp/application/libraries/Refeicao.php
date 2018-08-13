@@ -23,8 +23,28 @@ Class Refeicao{
     }
 
     public function import($ref){
+        // Primeiro exclui as digitais cadastradas no relogio de acordo com o codigo passado (12,19,22,00hrs)
+        $this->removeAcessoGeral($ref);
+        // Executa importação das batidas
         return $this->importAfd($ref);
     }
+
+    function removeAcessoGeral($ref){
+        set_time_limit(2500);
+        date_default_timezone_set("Brazil/East");
+        $data = date('d/m/Y H:i:s');
+        $d = intval(substr($data, 0, 2));
+        $m = intval(substr($data, 3, 2));
+        $y = intval(substr($data, 6, 4));
+        $equipamento = $this->CI->biometria_equipamento_model->get_all(array('TIPO'=>'IDSECURE'));
+        if($equipamento){ 
+            $constructIdSecure = ["ip" => $equipamento[0]->IP, "port" => $equipamento[0]->PORTA, "user" => $equipamento[0]->USUARIO, "password" => $equipamento[0]->SENHA,"protocol"=>$equipamento[0]->PROTOCOLO]; 
+            $this->CI->load->library('IdSecure',$constructIdSecure);
+            if($this->CI->idsecure->authenticate()){
+                $this->CI->idsecure->removeGeral($ref);
+            }
+        }
+    } 
 
     function importAcess(){
         date_default_timezone_set("Brazil/East");        
@@ -54,10 +74,12 @@ Class Refeicao{
                                           ->result();                        
                         if($resultado){                            
                             $operationOk = $this->CI->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.ACESSOU = 1 WHERE RH_REFEICAO.ID = {$resultado[0]->ID}");
+                            $operationOk2 = $this->CI->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.VLREFEICAO = '2.24' WHERE RH_REFEICAO.ID = {$resultado[0]->ID}");
                         }                        
                     }
                 } 
-                $this->CI->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.ACESSOU = 2 WHERE RH_REFEICAO.ACESSOU is null AND RH_REFEICAO.DATA = '{$data}'");              
+                $this->CI->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.ACESSOU = 2 WHERE RH_REFEICAO.ACESSOU is null AND RH_REFEICAO.DATA = '{$data}'");
+                $this->CI->db->query("UPDATE RH_REFEICAO SET RH_REFEICAO.VLREFEICAO = '11.19' WHERE RH_REFEICAO.ACESSOU is null AND RH_REFEICAO.DATA = '{$data}'");              
             }
         }
     }
@@ -156,8 +178,7 @@ Class Refeicao{
         $tot = 0;
         $totSucc = 0;
         $totError = 0;
-        $equipamento = $this->CI->biometria_equipamento_model->get_all(array('TIPO'=>'IDSECURE'));                
-
+        $equipamento = $this->CI->biometria_equipamento_model->get_all(array('TIPO'=>'IDSECURE'));
         if($equipamento){  
             $constructIdSecure = ["ip" => $equipamento[0]->IP, "port" => $equipamento[0]->PORTA, "user" => $equipamento[0]->USUARIO, "password" => $equipamento[0]->SENHA,"protocol"=>$equipamento[0]->PROTOCOLO];
             $constructParams = ["ip" => '192.168.98.13', "user" => 'admin', "password" => 'admin',"protocol"=>'https'];
@@ -168,48 +189,19 @@ Class Refeicao{
                     //$this->removeAcess();
                     $afd = $this->CI->idclass->getAFDRefeicao($d,$m,$y,$turn);
                     $tot = count($afd);
+                    $arrayUser = [];
                     foreach ($afd as $key => $value) {
                         $usuario = new StdClass();                        
                         $user = $this->CI->idsecure->searchUser(substr($value->PIS, 1));
                         $usuario->DATA = $value->DTBATIDA;
-                        if($user){                            
-                            $usuario->NOME = $user->name;
-                            $usuario->USER_ID_IDSECURE = $user->id;
-                            $group = $this->CI->idsecure->getGroups($grupoCode);
-                            if($group){
-                                foreach ($user->groups as $key => $value) {
-                                    if($value == Refeicao::GRUPO12 ||
-                                        $value == Refeicao::GRUPO19 ||
-                                        $value == Refeicao::GRUPO22 ||
-                                        $value == Refeicao::GRUPO00 ){                                    
-                                        unset($user->groups[$key]);
-                                        unset($user->groupsList[$key]);
-                                        unset($user->userGroupsList[$key]);
-                                    }  
-                                    if($value != $grupoCode){                                                     
-                                        array_push($user->groups, $grupoCode);
-                                        array_push($user->groupsList, $group);
-                                    }                              
-                                }                                
-                                $usuario->STATUS = "Sucesso";
-                                $totSucc++;
-                                //print_r($user);
-                                if($this->CI->idsecure->setUserGroup($user)){
-                                    $usuario->STATUS = "Sucesso";
-                                    $totSucc++;
-                                }else{
-                                    $totError++;
-                                    $usuario->STATUS = "Erro so salvar no IdSecure";
-                                }
-                            }                                                    
-                        }else{
-                            $totError++;
-                            $usuario->NOME = $value->PIS;
-                            $usuario->STATUS = "Usuário não encontrado no IdSecure.";
-                        }
+                        $usuario->NOME = $user->name;
+                        $usuario->USER_ID_IDSECURE = $user->id;
+                        array_push($arrayUser, $user->id);
                         $usuario->HORARIO_REFEICAO = $turn;
                         $this->CI->rh_refeicao_model->insert($usuario);
                     }
+                    $this->CI->idsecure->import_userTogroup($arrayUser, $ref);
+                    $totSucc ++;
                 }else{
                     $retorno->status = false;
                     $retorno->msg = "Erro ao autencicar no relógio refeição.";
@@ -217,7 +209,7 @@ Class Refeicao{
             }else{
                 $retorno->status = false;
                 $retorno->msg = "Erro ao autencicar no IdSecure.";
-            }          
+            }                   
         }else {
             $retorno->status = false;
             $retorno->msg = "Nenhum equipamento cadastro.";
@@ -348,7 +340,7 @@ Class Refeicao{
         
         $assunto = "Refeição - ".$horario;                
         
-        if($this->CI->my_phpmailer->send_mail('ti03@transmagna.com.br',$conteudo,$assunto) && 
+        if($this->CI->my_phpmailer->send_mail('ti02@transmagna.com.br',$conteudo,$assunto) && 
             $this->my_phpmailer->send_mail('refeitorio@transmagna.com.br',$conteudo,$assunto)){
             $retorno->ok = true;
             $retorno->mensagem = "Email enviado com sucesso!";
