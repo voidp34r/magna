@@ -28,7 +28,8 @@ class Rh_refeicao extends MY_Controller{
                                             'Erros' => 'import_erros',
                                             'Limpar Reservas IDSECURE' => 'import_remove',
                                             'Relatórios' => 'import_relatorio',
-                                            'Importação Manual' => 'import_manual');
+                                            'Importação Manual' => 'import_manual',
+                                        );
         
         parent::__construct();
     }
@@ -38,10 +39,13 @@ class Rh_refeicao extends MY_Controller{
         //$this->removeAcessoGeral();
     }
 
+
     function import_manual($page = 0){
         $get  = $this->input->get();
         $ref = $get[int][HORARIO_REFEICAO];
         $PIS = $get[filtro][like][NOME];
+        $cpf = $get[filtro][like][CPF];
+        if ($cpf) {}
         if (strlen($PIS) >= 10){
             if ($ref > 0){
                 $equipamento = $this->biometria_equipamento_model->get_all(array('TIPO'=>'IDSECURE'));
@@ -69,7 +73,7 @@ class Rh_refeicao extends MY_Controller{
                             break;
                     } 
                     $usuario = new StdClass();                        
-                    $user = $this->idsecure->searchUser($PIS); 
+                    $user = $this->idsecure->searchUser($PIS);
                     $usuario->DATA = date('d/m/Y');
                     $usuario->NOME = $user->name;
                     if($user){                            
@@ -99,7 +103,31 @@ class Rh_refeicao extends MY_Controller{
                 }
             }
         }
-        $this->dados['retorno'] = $usuario; 
+        $this->dados['retorno'] = $usuario;
+        if($page <> 0) $page = (($page - 1) * 9) + 1;
+        $this->db->from("BIOMETRIA_USUARIO");
+        $this->db->join('SOFTRAN_MAGNA.GTCFUNDP', 'SOFTRAN_MAGNA.GTCFUNDP.NRCPF = BIOMETRIA_USUARIO.CPF'); 
+        $this->_filtro_where();
+        $this->_filtro_like();
+        $total = $this->db->get()->num_rows();
+
+        $this->db->from("BIOMETRIA_USUARIO");
+        $this->db->join('SOFTRAN_MAGNA.GTCFUNDP', 'SOFTRAN_MAGNA.GTCFUNDP.NRCPF = BIOMETRIA_USUARIO.CPF'); 
+        $this->_filtro_where();
+        $this->_filtro_like();
+        $this->db->limit(10,$page);
+        $this->db->order_by('DSNOME','ASC');
+
+        $lista = $this->db->get()->result();
+
+        foreach ($lista as $usr){
+            $usr->QTDIGITAIS = $this->db->query("SELECT * FROM BIOMETRIA_USUARIO_DIGITAL WHERE USUARIOCPF = '$usr->CPF'")->num_rows();
+        }
+        
+        $this->dados['lista'] = $lista;
+        $this->dados['total'] = $total;
+        $this->dados['paginacao'] = $this->configurePagination(10,$total,'rh_biometria/lista_usuarios');
+        
         $this->render('import_manual');
     }
 
@@ -608,7 +636,7 @@ class Rh_refeicao extends MY_Controller{
                         $afd = $this->idclass->getAFDRefeicao($d,$m,$y,$turn);
                         $tot = count($afd);
                         foreach ($afd as $key => $value) {
-                            $usuario = new StdClass();                        
+                            $usuario = new StdClass();              
                             $user = $this->idsecure->searchUser(substr($value->PIS, 1));
                             $usuario->DATA = $value->DTBATIDA;
                             if($user){                            
