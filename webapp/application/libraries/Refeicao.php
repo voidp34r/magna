@@ -194,7 +194,13 @@ Class Refeicao{
                         $usuario = new StdClass();                        
                         $user = $this->CI->idsecure->searchUser(substr($value->PIS, 1));
                         $usuario->DATA = $value->DTBATIDA;
-                        $usuario->NOME = $user->name;
+                        $usuario->NOME = $value->PIS.' - '.$user->name;
+                        if (strlen($usuario->NOME) < 20){
+                            $usuario->STATUS = "Erro ao buscar usuario no IDSECURE";
+                        }
+                        else{
+                            $usuario->STATUS = "Sucesso";
+                        }
                         $usuario->USER_ID_IDSECURE = $user->id;
                         array_push($arrayUser, $user->id);
                         $usuario->HORARIO_REFEICAO = $turn;
