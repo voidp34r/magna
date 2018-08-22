@@ -1,0 +1,21 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="1" author="alisson">
+    	<comment>Tabela de log para webservice</comment>
+        <createTable tableName="WS_LOG">
+            <column name="ID" type="number"/>
+            <column name="DTINICIO" type="datetime"/>
+            <column name="DTFIM" type="datetime"/>
+            <column name="USUARIO_ID" type="number"/>
+            <column name="OPERACAO" type="varchar(60)"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
+
+
