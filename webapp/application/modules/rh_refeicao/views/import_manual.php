@@ -1,89 +1,43 @@
-
-<div class="panel panel-default">
-	<div class="panel-heading">
-		Usuários
-		<small>
-			(<?= $total; ?>) - <?= anchor(current_url(), 'Atualizar'); ?>
-		</small>
-		<a class="pull-right" data-toggle="collapse" href="#filtro">Filtro</a>
-	</div>
-	<div class="collapse" id="filtro">
-		<div class="panel-body">
-			<?= form_open('rh_refeicao/import_manual', 'method="GET"'); ?>
-			<div class="row">
-				<div class="col-sm-3">
-					<label>Nome</label>
-					<?= campo_filtro($filtro, 'DSNOME', 'like'); ?>
-				</div>
-				<div class="col-sm-3">
-					<label>CPF</label>
-					<?= campo_filtro($filtro, 'CPF', 'like'); ?>
-				</div>
-			</div>
-			<br>
-			<input type="submit" value="Filtrar" class="btn btn-sm btn-primary">
-			<?= form_close(); ?>
-		</div>
-	</div>
-	<div class="panel-body table-responsive">
-		<?php
-		if (!empty($lista))
-		{
-			?>
-			<table class="table table-hover">
-				<thead>
-					<tr>
-						<th>Cód.</th>
-						<th>Nome</th>
-						<th>CPF</th>
-						<th>Tipo</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ($lista as $item){ ?>
-						<tr>
-							<td>
-								<?= $item->ID; ?>
-							</td>
-							<td>
-								<?= $item->DSNOME; ?>
-							</td>
-							<td>
-								<?= substr($item->CPF,3,11) ; ?>
-							</td>
-							<td>
-								<?php
-								switch($item->TIPO){
-									case 1:
-									echo "Funcionário";
-									break;
-									case 2:
-									echo "Agregado";
-									break;
-									case 3:
-									echo "Terceiro";
-									break;
-								}
-								?>
-							</td>
-							<td align="right">
-								<a href="rh_refeicao/editar_usuario/<?= $item->ID; ?>" type="button" class="btn btn-xs btn-primary">
-									<i class="fa fa-fw fa-cutlery"></i>
-								</a>
-							</td>
-						</tr>
-					<?php } ?>
-				</tbody>
-			</table>
-			<?php
-		}
-		?>
-
-	</div>
-</div>
-<nav>
-	<ul class="pagination">
-		<?= $paginacao; ?>
-	</ul>
-</nav>
+ <div class="panel panel-default">
+    <div class="panel-heading">
+        <div class="panel-body">
+            <form>
+                <div class="row">  
+                    <div class="col-md-2">
+                        <label>PIS</label>
+                        <?= campo_filtro($filtro, 'NOME', 'like'); ?>
+                    </div>  
+                    <div class="col-md-3">
+                         <label>Horário Refeição</label>
+                                    <select name="int[HORARIO_REFEICAO]" class="form-control input-small" size="1">
+                                    <option value="1">12H</option>
+                                    <option value="2">19H</option>
+                                    <option value="3">22H</option>
+                                    <option value="4">00H</option>
+                                    </select>
+                    </div>
+                </div>
+                <div class="row"> 
+                    <div class="col-md-2">
+                        <input type="submit" value="Cadastrar Reserva" class="btn btn-sm btn-primary btn-block">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="panel-body table-responsive">
+        <?php
+        $PIS = $_GET[filtro][like][NOME];
+        $ref = $_GET[int][HORARIO_REFEICAO];
+        if (strlen($PIS) < 10 or $ref <= 0){
+            echo '<div class="alert alert-danger" role="alert" align="center">O numero de PIS deve conter no minimo 10 caracteres <b>E</b> deve ser selecionado um Horario de Refeição</div>';
+        }
+        else{
+            if ($retorno->STATUS <> 'Sucesso'){
+                echo '<div class="alert alert-danger" role="alert" align="center">'.$retorno->STATUS.'</div>';
+            }
+            else{
+               echo '<div class="alert alert-success" role="alert" align="center">Reserva para '.$retorno->NOME.' efetuada com '.$retorno->STATUS.', Data Refeição: '.$retorno->DATA.'.</div>';
+            }
+        }
+?>
